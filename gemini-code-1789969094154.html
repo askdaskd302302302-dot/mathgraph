@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>그림그래프 탐험대 (Пиктограммы)</title>
+    <style>
+        body { font-family: 'Malgun Gothic', '맑은 고딕', sans-serif; margin: 0; padding: 15px; background-color: #e2e8f0; color: #2d3748; touch-action: manipulation; }
+        .app-container { max-width: 900px; margin: 0 auto; background: #ffffff; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); overflow: hidden; padding-bottom: 30px; }
+        .header { background: #4299e1; color: white; padding: 20px; text-align: center; }
+        .header h1 { margin: 0; font-size: 1.8em; }
+        .progress-bar { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; margin-top: 15px; padding: 0 10px; }
+        .star { font-size: 1.5em; color: #a0aec0; transition: all 0.3s; }
+        .star.active { color: #f6e05e; text-shadow: 0 0 10px #d69e2e; }
+        
+        .stage { display: none; padding: 20px; animation: fadeIn 0.5s; }
+        .stage.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .stage-title { color: #2b6cb0; font-size: 1.4em; border-bottom: 3px solid #ebf8ff; padding-bottom: 10px; margin-bottom: 15px; }
+        .story-box { background: #fffaf0; border: 2px solid #fbd38d; padding: 15px; border-radius: 10px; margin-bottom: 20px; font-size: 1.2em; line-height: 1.5; }
+        .ru-text { color: #718096; font-size: 0.85em; display: block; margin-top: 5px; }
+        .highlight { color: #dd6b20; font-weight: bold; }
+        .guide-text { background: #ebf8ff; color: #2b6cb0; padding: 10px; border-radius: 8px; font-weight: bold; margin-bottom: 15px; text-align: center; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 2px solid #cbd5e0; padding: 10px; text-align: center; font-size: 1.1em; }
+        th { background-color: #edf2f7; }
+        input[type="number"] { width: 70px; padding: 8px; font-size: 1.1em; text-align: center; border: 2px solid #a0aec0; border-radius: 8px; }
+        
+        .legend { display: flex; justify-content: center; gap: 20px; margin-bottom: 15px; background: #ebf8ff; padding: 10px; border-radius: 8px; font-size: 1.1em; align-items: center; }
+        .graph-row { display: flex; border: 2px solid #e2e8f0; margin-bottom: 8px; border-radius: 8px; overflow: hidden; align-items: stretch; }
+        .item-name { width: 30%; background: #edf2f7; display: flex; flex-direction: column; justify-content: center; align-items: center; font-weight: bold; padding: 10px; border-right: 2px solid #e2e8f0; }
+        .symbols { width: 45%; padding: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 50px; }
+        .controls { width: 25%; display: flex; flex-direction: column; gap: 5px; padding: 8px; background: #f7fafc; border-left: 2px solid #e2e8f0; justify-content: center; }
+        
+        .static-symbols { width: 70%; padding: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-height: 50px; background: #fff; }
+
+        button.btn-graph { padding: 8px; font-size: 0.9em; font-weight: bold; border: none; border-radius: 5px; cursor: pointer; color: white; }
+        .btn-100 { background-color: #ed8936; } .btn-10 { background-color: #f6ad55; } .btn-del { background-color: #a0aec0; }
+        .c-100 { width: 35px; height: 35px; border-radius: 50%; background-color: #ed8936; border: 2px solid #dd6b20; display: inline-block; vertical-align: middle; }
+        .c-10 { width: 18px; height: 18px; border-radius: 50%; background-color: #ed8936; border: 2px solid #dd6b20; display: inline-block; vertical-align: middle; }
+
+        .q-box { background: #f0fff4; padding: 15px; border-radius: 10px; margin-bottom: 12px; font-size: 1.1em; border: 2px solid #9ae6b4; }
+        select { padding: 8px; font-size: 1em; border: 2px solid #48bb78; border-radius: 5px; font-weight: bold; color: #276749; }
+
+        .check-btn { width: 100%; padding: 15px; font-size: 1.3em; font-weight: bold; background-color: #48bb78; color: white; border: none; border-radius: 10px; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        .msg { text-align: center; font-size: 1.2em; font-weight: bold; margin-top: 15px; padding: 12px; border-radius: 8px; display: none; }
+        .msg.success { background-color: #c6f6d5; color: #22543d; display: block; }
+        .msg.error { background-color: #fed7d7; color: #822727; display: block; }
+        .correct-input { background-color: #c6f6d5 !important; border-color: #48bb78 !important; }
+        .error-input { background-color: #fed7d7 !important; border-color: #f56565 !important; }
+
+        .game-card { background: #667eea; color: white; padding: 20px; border-radius: 15px; text-align: center; }
+        .game-btns button { padding: 12px 20px; font-size: 1.1em; font-weight: bold; border: none; border-radius: 8px; cursor: pointer; background: #f6e05e; color: #744210; margin: 5px; }
+        #confetti { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1000; display: none; }
+    </style>
+</head>
+<body>
+<div id="confetti"></div>
+<div class="app-container">
+    <div class="header">
+        <h1>📊 그림그래프 탐험대</h1>
+        <div class="progress-bar" id="stars-container">
+            <!-- 별 10개 + 왕관 1개 자동 생성 -->
+        </div>
+    </div>
+
+    <!-- ==================== [1~5단계: 그래프 그리기] ==================== -->
+    <div id="stage-1" class="stage active">
+        <h2 class="stage-title">1단계: 과일 그리기 <span class="ru-text">(Нарисуйте фрукты)</span></h2>
+        <div class="story-box">사과 30명, 바나나 40명, 포도 20명</div>
+        <div class="legend"><div class="c-10"></div> = 10명</div>
+        <div id="graph-area-1"></div>
+        <button class="check-btn" onclick="checkStage(1)">확인 (Проверить)</button>
+        <div id="msg-1" class="msg"></div>
+    </div>
+
+    <div id="stage-2" class="stage">
+        <h2 class="stage-title">2단계: 방과 후 학교 <span class="ru-text">(Кружки)</span></h2>
+        <div class="story-box">축구 120명, 미술 110명</div>
+        <div class="legend"><div class="c-100"></div>=100명 &nbsp; <div class="c-10"></div>=10명</div>
+        <div id="graph-area-2"></div>
+        <button class="check-btn" onclick="checkStage(2)">확인</button>
+        <div id="msg-2" class="msg"></div>
+    </div>
+
+    <div id="stage-3" class="stage">
+        <h2 class="stage-title">3단계: 점심 메뉴 <span class="ru-text">(Обед)</span></h2>
+        <div class="story-box">돈까스 130명, 볶음밥 120명, 우동 140명</div>
+        <table>
+            <tr><th>메뉴</th><th>돈까스</th><th>볶음밥</th><th>우동</th></tr>
+            <tr><td>명</td>
+                <td><input type="number" id="t3-1" data-ans="130"></td>
+                <td><input type="number" id="t3-2" data-ans="120"></td>
+                <td><input type="number" id="t3-3" data-ans="140"></td>
+            </tr>
+        </table>
+        <div class="legend"><div class="c-100"></div>=100명 &nbsp; <div class="c-10"></div>=10명</div>
+        <div id="graph-area-3"></div>
+        <button class="check-btn" onclick="checkStage(3)">확인</button>
+        <div id="msg-3" class="msg"></div>
+    </div>
+
+    <div id="stage-4" class="stage">
+        <h2 class="stage-title">4단계: 주말 여행 <span class="ru-text">(Поездка)</span></h2>
+        <div class="story-box">놀이공원 210명, 동물원 150명</div>
+        <table>
+            <tr><th>장소</th><th>놀이공원</th><th>동물원</th></tr>
+            <tr><td>명</td>
+                <td><input type="number" id="t4-1" data-ans="210"></td>
+                <td><input type="number" id="t4-2" data-ans="150"></td>
+            </tr>
+        </table>
+        <div class="legend"><div class="c-100"></div>=100명 &nbsp; <div class="c-10"></div>=10명</div>
+        <div id="graph-area-4"></div>
+        <div class="q-box">가장 사람이 많은 곳: <select id="q4" data-ans="park"><option value="">-선택-</option><option value="park">놀이공원</option><option value="zoo">동물원</option></select></div>
+        <button class="check-btn" onclick="checkStage(4)">확인</button>
+        <div id="msg-4" class="msg"></div>
+    </div>
+
+    <div id="stage-5" class="stage">
+        <h2 class="stage-title">5단계: 겨울 축제 <span class="ru-text">(Зимний фестиваль)</span></h2>
+        <div class="story-box">눈썰매 120명, 얼음낚시 150명, 공연 140명</div>
+        <div class="legend"><div class="c-100"></div>=100명 &nbsp; <div class="c-10"></div>=10명</div>
+        <div id="graph-area-5"></div>
+        <div class="q-box">1) 가장 사람이 많은 곳: <select id="q5-1" data-ans="fish"><option value="">-선택-</option><option value="snow">눈썰매</option><option value="fish">낚시</option><option value="show">공연</option></select></div>
+        <div class="q-box">2) 가장 사람이 적은 곳: <select id="q5-2" data-ans="snow"><option value="">-선택-</option><option value="snow">눈썰매</option><option value="fish">낚시</option><option value="show">공연</option></select></div>
+        <button class="check-btn" onclick="checkStage(5)">확인</button>
+        <div id="msg-5" class="msg"></div>
+    </div>
+
+    <!-- ==================== [6~10단계: 그려진 그래프 해석하기] ==================== -->
+    <div id="stage-6" class="stage">
+        <h2 class="stage-title">6단계: 색깔 그래프 읽기 <span class="ru-text">(Чтение графика цветов)</span></h2>
+        <div class="guide-text">👀 그래프를 보고 숫자를 적어보세요! (Посчитай и напиши цифру)</div>
+        <div class="legend"><div class="c-10"></div> = 10명</div>
+        <div id="graph-area-6"></div>
+        <table>
+            <tr><th>색깔</th><th>빨강</th><th>파랑</th><th>노랑</th></tr>
+            <tr><td>명</td>
+                <td><input type="number" id="t6-1" data-ans="30"></td>
+                <td><input type="number" id="t6-2" data-ans="50"></td>
+                <td><input type="number" id="t6-3" data-ans="20"></td>
+            </tr>
+        </table>
+        <button class="check-btn" onclick="checkStage(6)">확인 (Проверить)</button>
+        <div id="msg-6" class="msg"></div>
+    </div>
+
+    <div id="stage-7" class="stage">
+        <h2 class="stage-title">7단계: 도서관 책 <span class="ru-text">(Книги в библиотеке)</span></h2>
+        <div class="legend"><div class="c-100"></div>=100권 &nbsp; <div class="c-10"></div>=10권</div>
+        <div id="graph-area-7"></div>
+        <table>
+            <tr><th>책</th><th>동화책 (Сказки)</th><th>위인전 (Биографии)</th></tr>
+            <tr><td>권(шт)</td>
+                <td><input type="number" id="t7-1" data-ans="120"></td>
+                <td><input type="number" id="t7-2" data-ans="110"></td>
+            </tr>
+        </table>
+        <button class="check-btn" onclick="checkStage(7)">확인</button>
+        <div id="msg-7" class="msg"></div>
+    </div>
+
+    <div id="stage-8" class="stage">
+        <h2 class="stage-title">8단계: 동물원 동물 <span class="ru-text">(Животные в зоопарке)</span></h2>
+        <div class="legend"><div class="c-100"></div>=100마리 &nbsp; <div class="c-10"></div>=10마리</div>
+        <div id="graph-area-8"></div>
+        <table>
+            <tr><th>동물</th><th>원숭이</th><th>토끼</th></tr>
+            <tr><td>마리</td>
+                <td><input type="number" id="t8-1" data-ans="210"></td>
+                <td><input type="number" id="t8-2" data-ans="150"></td>
+            </tr>
+        </table>
+        <div class="q-box">수가 가장 <b>많은</b> 동물: <select id="q8" data-ans="monkey"><option value="">-선택-</option><option value="monkey">원숭이</option><option value="rabbit">토끼</option></select></div>
+        <button class="check-btn" onclick="checkStage(8)">확인</button>
+        <div id="msg-8" class="msg"></div>
+    </div>
+
+    <div id="stage-9" class="stage">
+        <h2 class="stage-title">9단계: 맛있는 간식 <span class="ru-text">(Вкусные закуски)</span></h2>
+        <div class="legend"><div class="c-100"></div>=100개 &nbsp; <div class="c-10"></div>=10개</div>
+        <div id="graph-area-9"></div>
+        <table>
+            <tr><th>간식</th><th>떡볶이</th><th>김밥</th><th>아이스크림</th></tr>
+            <tr><td>개</td>
+                <td><input type="number" id="t9-1" data-ans="140"></td>
+                <td><input type="number" id="t9-2" data-ans="230"></td>
+                <td><input type="number" id="t9-3" data-ans="120"></td>
+            </tr>
+        </table>
+        <div class="q-box">1) 가장 많이 팔린 간식: <select id="q9-1" data-ans="kimbap"><option value="">-선택-</option><option value="tteok">떡볶이</option><option value="kimbap">김밥</option><option value="ice">아이스크림</option></select></div>
+        <div class="q-box">2) 가장 적게 팔린 간식: <select id="q9-2" data-ans="ice"><option value="">-선택-</option><option value="tteok">떡볶이</option><option value="kimbap">김밥</option><option value="ice">아이스크림</option></select></div>
+        <button class="check-btn" onclick="checkStage(9)">확인</button>
+        <div id="msg-9" class="msg"></div>
+    </div>
+
+    <div id="stage-10" class="stage">
+        <h2 class="stage-title">10단계: 운동회 점수 (차이 구하기) <span class="ru-text">(Спортивный праздник)</span></h2>
+        <div class="guide-text">⭐ 집중! 두 팀의 점수 차이를 계산해보세요. (Посчитай разницу)</div>
+        <div class="legend"><div class="c-100"></div>=100점 &nbsp; <div class="c-10"></div>=10점</div>
+        <div id="graph-area-10"></div>
+        <table>
+            <tr><th>팀</th><th>청군(Синие)</th><th>백군(Белые)</th></tr>
+            <tr><td>점수</td>
+                <td><input type="number" id="t10-1" data-ans="250"></td>
+                <td><input type="number" id="t10-2" data-ans="130"></td>
+            </tr>
+        </table>
+        <div class="q-box" style="border-color:#3182ce; background:#ebf8ff;">
+            청군은 백군보다 <b><input type="number" id="q10-diff" data-ans="120" style="width:70px; display:inline-block; margin:0 5px;"></b> 점 더 많습니다.<br>
+            <span class="ru-text">(У синей команды на [ ? ] баллов больше, чем у белой.)</span>
+        </div>
+        <button class="check-btn" onclick="checkStage(10)">확인 (최종 통과!)</button>
+        <div id="msg-10" class="msg"></div>
+    </div>
+
+    <!-- ==================== [11단계: 보너스 게임] ==================== -->
+    <div id="stage-11" class="stage">
+        <h2 class="stage-title" style="text-align:center;">🎮 보너스 게임: 우주 괴물 잡기!</h2>
+        <div class="game-card">
+            <p>질문에 빠르게 답하세요!</p>
+            
+            <!-- 보너스 게임에 추가된 범례 부분 -->
+            <div class="legend" style="margin-bottom: 15px; color: #333;">
+                <div class="c-100"></div> = 100마리(шт) &nbsp;&nbsp;
+                <div class="c-10"></div> = 10마리(шт)
+            </div>
+
+            <div id="game-graph" style="background:white; color:#333; padding:15px; border-radius:10px; margin-bottom:15px; text-align:left;">
+                <div style="display:flex; align-items:center; margin-bottom:5px;"><div style="width:80px; font-weight:bold; color:red;">빨강</div><div class="c-100"></div><div class="c-10"></div><div class="c-10"></div></div>
+                <div style="display:flex; align-items:center; margin-bottom:5px;"><div style="width:80px; font-weight:bold; color:blue;">파랑</div><div class="c-100"></div><div class="c-100"></div></div>
+                <div style="display:flex; align-items:center;"><div style="width:80px; font-weight:bold; color:green;">초록</div><div class="c-10"></div><div class="c-10"></div><div class="c-10"></div><div class="c-10"></div></div>
+            </div>
+            
+            <div id="game-q1">
+                <h3>Q1. 파랑 괴물은 모두 몇 마리일까요?</h3>
+                <div class="game-btns">
+                    <button onclick="checkGame(1, false)">120</button><button onclick="checkGame(1, true)">200</button><button onclick="checkGame(1, false)">20</button>
+                </div>
+            </div>
+            <div id="game-q2" style="display:none;">
+                <h3>Q2. 빨강은 초록보다 몇 마리 더 많을까요?</h3>
+                <div class="game-btns">
+                    <button onclick="checkGame(2, true)">80</button><button onclick="checkGame(2, false)">120</button><button onclick="checkGame(2, false)">40</button>
+                </div>
+            </div>
+            <div id="game-end" style="display:none; font-size:1.5em; font-weight:bold; color:#f6e05e; margin-top:20px;">
+                🎉 대성공! 완벽합니다! 🎉
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const starContainer = document.getElementById('stars-container');
+    for(let i=1; i<=10; i++) { starContainer.innerHTML += `<div class="star" id="star-${i}">★</div>`; }
+    starContainer.innerHTML += `<div class="star" id="star-11">👑</div>`;
+
+    const gData = {
+        1: [ {id:'s1-1', n:'사과', a100:0, a10:3, bt100:false}, {id:'s1-2', n:'바나나', a100:0, a10:4, bt100:false}, {id:'s1-3', n:'포도', a100:0, a10:2, bt100:false} ],
+        2: [ {id:'s2-1', n:'축구', a100:1, a10:2, bt100:true}, {id:'s2-2', n:'미술', a100:1, a10:1, bt100:true} ],
+        3: [ {id:'s3-1', n:'돈까스', a100:1, a10:3, bt100:true}, {id:'s3-2', n:'볶음밥', a100:1, a10:2, bt100:true}, {id:'s3-3', n:'우동', a100:1, a10:4, bt100:true} ],
+        4: [ {id:'s4-1', n:'놀이공원', a100:2, a10:1, bt100:true}, {id:'s4-2', n:'동물원', a100:1, a10:5, bt100:true} ],
+        5: [ {id:'s5-1', n:'눈썰매', a100:1, a10:2, bt100:true}, {id:'s5-2', n:'얼음낚시', a100:1, a10:5, bt100:true}, {id:'s5-3', n:'공연', a100:1, a10:4, bt100:true} ],
+        6: [ {n:'빨강', v100:0, v10:3}, {n:'파랑', v100:0, v10:5}, {n:'노랑', v100:0, v10:2} ],
+        7: [ {n:'동화책', v100:1, v10:2}, {n:'위인전', v100:1, v10:1} ],
+        8: [ {n:'원숭이', v100:2, v10:1}, {n:'토끼', v100:1, v10:5} ],
+        9: [ {n:'떡볶이', v100:1, v10:4}, {n:'김밥', v100:2, v10:3}, {n:'아이스크림', v100:1, v10:2} ],
+        10: [ {n:'청군', v100:2, v10:5}, {n:'백군', v100:1, v10:3} ]
+    };
+
+    const userG = {};
+
+    function init() {
+        for(let s=1; s<=5; s++) {
+            let html = '';
+            gData[s].forEach(item => {
+                userG[item.id] = { v100:0, v10:0 };
+                html += `<div class="graph-row" id="row-${item.id}">
+                    <div class="item-name">${item.n}</div>
+                    <div class="symbols" id="sym-${item.id}"></div>
+                    <div class="controls">
+                        ${item.bt100 ? `<button class="btn-graph btn-100" onclick="addS('${item.id}',100)">+100</button>` : ''}
+                        <button class="btn-graph btn-10" onclick="addS('${item.id}',10)">+10</button>
+                        <button class="btn-graph btn-del" onclick="delS('${item.id}')">지우기 ↩</button>
+                    </div></div>`;
+            });
+            document.getElementById(`graph-area-${s}`).innerHTML = html;
+        }
+
+        for(let s=6; s<=10; s++) {
+            let html = '';
+            gData[s].forEach(item => {
+                let circles = '';
+                for(let i=0; i<item.v100; i++) circles += `<div class="c-100"></div>`;
+                for(let i=0; i<item.v10; i++) circles += `<div class="c-10"></div>`;
+                html += `<div class="graph-row"><div class="item-name">${item.n}</div><div class="static-symbols">${circles}</div></div>`;
+            });
+            document.getElementById(`graph-area-${s}`).innerHTML = html;
+        }
+    }
+
+    function addS(id, amt) {
+        const d = document.createElement('div'); d.className = amt===100 ? 'c-100' : 'c-10';
+        document.getElementById(`sym-${id}`).appendChild(d);
+        amt===100 ? userG[id].v100++ : userG[id].v10++;
+    }
+    function delS(id) {
+        const box = document.getElementById(`sym-${id}`);
+        if(box.lastChild) {
+            box.lastChild.className==='c-100' ? userG[id].v100-- : userG[id].v10--;
+            box.removeChild(box.lastChild);
+        }
+    }
+
+    function checkStage(s) {
+        let pass = true;
+
+        const inputs = document.querySelectorAll(`#stage-${s} input[type="number"]`);
+        inputs.forEach(i => {
+            if(i.value == i.dataset.ans) i.className = 'correct-input';
+            else { i.className = 'error-input'; pass = false; }
+        });
+
+        const selects = document.querySelectorAll(`#stage-${s} select`);
+        selects.forEach(sel => {
+            if(sel.value === sel.dataset.ans) sel.className = 'correct-input';
+            else { sel.className = 'error-input'; pass = false; }
+        });
+
+        if(s <= 5) {
+            gData[s].forEach(c => {
+                const row = document.getElementById(`row-${c.id}`);
+                if(userG[c.id].v100 === c.a100 && userG[c.id].v10 === c.a10) { row.style.borderColor='#48bb78'; row.style.backgroundColor='#f0fff4'; }
+                else { row.style.borderColor='#f56565'; row.style.backgroundColor='#fff5f5'; pass = false; }
+            });
+        }
+
+        const msg = document.getElementById(`msg-${s}`);
+        if(pass) {
+            msg.textContent = `🎉 ${s}단계 성공!`; msg.className = 'msg success';
+            document.getElementById(`star-${s}`).classList.add('active');
+            setTimeout(() => {
+                document.getElementById(`stage-${s}`).classList.remove('active');
+                document.getElementById(`stage-${s+1}`).classList.add('active');
+                window.scrollTo(0, 0);
+            }, 1200);
+        } else {
+            msg.textContent = '🤔 빨간색으로 표시된 부분을 다시 확인해 보세요!'; msg.className = 'msg error';
+        }
+    }
+
+    function checkGame(qNum, isCorrect) {
+        if(isCorrect) {
+            if(qNum === 1) {
+                document.getElementById('game-q1').style.display = 'none';
+                document.getElementById('game-q2').style.display = 'block';
+            } else {
+                document.getElementById('game-q2').style.display = 'none';
+                document.getElementById('game-end').style.display = 'block';
+                document.getElementById('star-11').classList.add('active');
+                fireConfetti();
+            }
+        } else alert("앗! 다시 계산해 보세요!");
+    }
+
+    function fireConfetti() {
+        const c = document.getElementById('confetti'); c.style.display = 'block';
+        const e = ['⭐', '🎉', '🌟', '💖', '🎈'];
+        for(let i=0; i<50; i++) {
+            const el = document.createElement('div');
+            el.innerText = e[Math.floor(Math.random()*e.length)];
+            el.style.position = 'absolute'; el.style.left = Math.random()*100+'vw'; el.style.top = '-50px';
+            el.style.fontSize = (Math.random()*20+20)+'px'; el.style.transition = 'all 2s ease-in';
+            c.appendChild(el);
+            setTimeout(() => { el.style.top = '100vh'; el.style.transform = `rotate(${Math.random()*360}deg)`; }, 50);
+        }
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>
